@@ -1,0 +1,8 @@
+prefix=/home/leanhchien/catkin_ws/src/control_motor/build/devel
+
+Name: control_motor
+Description: Description of control_motor
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

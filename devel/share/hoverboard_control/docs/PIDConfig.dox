@@ -1,0 +1,10 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~RPM" : \b [int] The sdesired velocity min: 0, default: 0, max: 1000
+- \b "~Kp" : \b [double]  The proportional gain min: 0.0, default: 100.0, max: 200.0
+- \b "~Ki" : \b [double]  The integral gain min: 0.0, default: 20.0, max: 40.0
+- \b "~Kd" : \b [double]  The derivative gain min: 0.0, default: 20.0, max: 40.0
+- \b "~size" : \b [int] A size parameter which is edited via an enum min: 0, default: 1, max: 3
+

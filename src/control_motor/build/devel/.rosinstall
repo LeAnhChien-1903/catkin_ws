@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/leanhchien/catkin_ws/src/control_motor/build/devel/setup.sh

@@ -1,0 +1,10 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~int_param" : \b [int] An Integer parameter min: 0, default: 100, max: 200
+- \b "~double_param" : \b [double] A double parameter min: 0.0, default: 100.0, max: 200.0
+- \b "~str_param" : \b [str] A string parameter min: , default: Hello World, max: 
+- \b "~bool_param" : \b [bool] A Boolean parameter min: False, default: True, max: True
+- \b "~size" : \b [int] A size parameter which is edited via an enum min: 0, default: 1, max: 3
+

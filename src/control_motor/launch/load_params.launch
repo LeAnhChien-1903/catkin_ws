@@ -1,0 +1,5 @@
+<launch>
+	<group ns = "PID">
+    	<rosparam file="$(find control_motor)/config/params.yaml" />
+	</group>
+</launch>
