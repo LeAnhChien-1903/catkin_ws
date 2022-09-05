@@ -1,7 +1,7 @@
 \subsubsection usage Usage
 \verbatim
 <node name="hoverboard_control" pkg="hoverboard_control" type="hoverboard_control">
-  <param name="RPM" type="int" value="0" />
+  <param name="RPM" type="int" value="1" />
   <param name="Kp" type="double" value="100.0" />
   <param name="Ki" type="double" value="20.0" />
   <param name="Kd" type="double" value="20.0" />

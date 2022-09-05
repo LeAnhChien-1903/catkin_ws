@@ -185,5 +185,5 @@ elif len(sys.argv) > 1:
   else:
     print (sys.argv[1], 'is not a file')
 
-if __name__ == "__main__":
-  main()
+# if __name__ == "__main__":
+#   main()

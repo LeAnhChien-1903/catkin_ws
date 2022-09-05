@@ -414,7 +414,7 @@ PIDConfig::GroupDescription<PIDConfig::DEFAULT, PIDConfig> Default("Default", ""
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
       __max__.RPM = 1000;
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
-      __default__.RPM = 0;
+      __default__.RPM = 1;
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
       Default.abstract_parameters.push_back(PIDConfig::AbstractParamDescriptionConstPtr(new PIDConfig::ParamDescription<int>("RPM", "int", 0, "The sdesired velocity", "", &PIDConfig::RPM)));
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"

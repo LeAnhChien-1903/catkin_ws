@@ -206,7 +206,17 @@ target_link_libraries(local_rrt_detector ${catkin_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+catkin_install_python(PROGRAMS nodes/autonomous_by_RRT.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+catkin_install_python(PROGRAMS nodes/RRT_2D.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 catkin_install_python(PROGRAMS nodes/autonomous_rrt.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+catkin_install_python(PROGRAMS nodes/rrt.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

@@ -4,7 +4,7 @@ group.0 {
 name=Dynamically Reconfigurable Parameters
 desc=See the [[dynamic_reconfigure]] package for details on dynamically reconfigurable parameters.
 0.name= ~RPM
-0.default= 0
+0.default= 1
 0.type= int
 0.desc=The sdesired velocity Range: 0 to 1000
 1.name= ~Kp

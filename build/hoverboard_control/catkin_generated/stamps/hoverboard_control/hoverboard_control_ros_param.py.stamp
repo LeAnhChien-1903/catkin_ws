@@ -22,7 +22,7 @@ class Hoverboard_Control:
         rospy.spin()
         timer.shutdown()
     def velocityCallback(self, data):
-        print("Velocity Value Received", self.velocityValue);
+        print("Velocity Value Received", self.velocityValue)
         self.velocityValue = data.data
         if (self.started == False):
             self.started = True
