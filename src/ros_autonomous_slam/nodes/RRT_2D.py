@@ -1,130 +1,173 @@
+from os import stat
+from tkinter import image_names
+import cv2
 import numpy as np
-import cv2 
-import math
-import random
-class Node:
-    def __init__(self, coordinate):
-        self.x = coordinate[0]
-        self.y = coordinate[1]
-        self.parent = None
-
-class RRT:
-    def __init__(self, image, s_start, s_goal, step_len, goal_sample_rate, iter_max):
+import random, math
+import sys 
+class RRT_2D:
+    def __init__(self, image, start, goal, MIN_NUM_VERT = 20, MAX_NUM_VERT = 1500, STEP_DISTANCE = 20, SEED = None):
         self.image = image
         self.grayImage = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-        ( _ , self.binaryImage) = cv2.threshold(self.grayImage, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        ( _ , self.binaryImage) = cv2.threshold(self.grayImage, 250, 255, cv2.THRESH_BINARY)
         self.height, self.width, _ = self.image.shape
-        self.s_start = Node(s_start)
-        self.s_goal = Node(s_goal)
-        self.step_len = step_len
-        self.goal_sample_rate = goal_sample_rate
-        self.iter_max = iter_max
-        self.vertices = [self.s_start]
+        self.start = start
+        self.goal = goal
+        self.MIN_NUM_VERT = MIN_NUM_VERT
+        self.MAX_NUM_VERT = MAX_NUM_VERT
+        self.step_distance = STEP_DISTANCE
+        self.seed = SEED
+        self.points = [self.start]
+        self.graph = [(self.start, [])]
         self.path = []
-    
-    def planning(self):
-        for i in range(self.iter_max):
-            node_rand = self.generate_random_node(self.goal_sample_rate)
-            node_near = self.nearest_neighbor(self.vertices,node_rand)
-            node_new = self.new_state(node_near, node_rand)
-            if i% 100 == 0:
-                print(i)
-            if node_new and not self.isCollision(node_near, node_rand):
-                self.vertices.append(node_new)
-                dist =  self.getDistance(node_new, self.s_goal)
+        
+        # phase two values (points 5 step distances around the goal point)
+        self.minX =  max(self.goal[0] - 5 * self.step_distance, 0)
+        self.maxX = min(self.goal[0] + 5 * self.step_distance, self.width - 1)
+        self.minY = max(self.goal[1] - 5 * self.step_distance, 0)
+        self.maxY = min(self.goal[1] + 5 * self.step_distance, self.height- 1)
+    def RRT(self):
+        hundreds =  100
+        random.seed(self.seed)
+        occupied = True
+        phaseTwo = False
 
-                if dist <= self.step_len and not self.isCollision(node_new, node_near):
-                    self.new_state(node_new,self.s_goal)
-                    self.path = self.extract_path(node_new)
-                    break
-    
-    def generate_random_node(self, goal_sample_rate):
-        if random.random() > goal_sample_rate:
-            return Node((np.random.uniform(1, self.width - 1),
-                        np.random.uniform(1, self.height - 1)))
-        return self.s_goal
-    @staticmethod
-    def nearest_neighbor(node_list, n):
-        return node_list[int(np.argmin([math.hypot(nd.x - n.x, nd.y - n.y) for nd in node_list]))]
-    @staticmethod
-    def getDistance(node_start, node_goal):
-        return math.hypot(node_goal.x - node_start.x, node_goal.y - node_start.y)
-    @staticmethod
-    def getAngle(node_start, node_goal):
-        return math.atan2(node_goal.y - node_start.y, node_goal.x - node_start.y) 
-    def new_state(self, node_start, node_goal):
-        dist = self.getDistance(node_start,node_goal)
-        theta = self.getAngle(node_start, node_goal)
+        i = 0
+        while (self.goal not in self.points) and (len(self.points) < self.MAX_NUM_VERT):
+            if (len(self.points) % hundreds) == 0:
+                hundreds += 100
+            while (occupied):
+                if phaseTwo and (random.random() > 0.8):
+                    point = [random.randint(self.minX, self.maxX), random.randint(self.minY, self.maxY)]
+                else:
+                    point = [random.randint(0, self.width-1), random.randint(0, self.height-1)]
 
-        dist = min(self.step_len, dist)
-        node_new = Node((node_start.x + dist * math.cos(theta),
-                        node_start.y + dist * math.sin(theta)))
+                if self.binaryImage[point[1], point[0]] == 255:
+                    occupied = False
+            occupied = True
 
-        node_new.parent = node_start
-        return node_new
+            nearest = self.findNearestPoint(point)
+            newPoints = self.connectPoints(point, nearest)
+            self.addToGraph(newPoints, point)
+            newPoints.pop(0)# The first element is already in the points list
+            self.points.extend(newPoints)
 
-    def extract_path(self, node_end):
-        path = [[int(self.s_goal.x), int(self.s_goal.y)]]
-        node = node_end
+            i += 1
+            if len(self.points) >= self.MIN_NUM_VERT:
+                if not phaseTwo:
+                    print('Phase Two')
+            phaseTwo = True
 
-        while node.parent is not None:
-            path.append([int(node.x), int(node.y)])
-            node = node.parent
-        path.append([int(node.x), int(node.y)])
-        path.reverse()
-        return path
-    def isCollision(self, nodeStart, nodeEnd):
-        if nodeStart.x == nodeEnd.x and nodeStart.y != nodeEnd.y:
-            coord = [nodeStart.y, nodeEnd.y]
-            if nodeStart.y > nodeEnd.y:
-                coord = [nodeEnd.y, nodeStart.y]
-            y = np.arange(coord[0], coord[1], (coord[1] - coord[0])/100)
-            x = nodeStart.x*np.ones(y.size)
-            for i in range(x.size):
-                if self.binaryImage[int(y[i]), int(x[i])] == 0:
-                    return True
-        elif nodeStart.x != nodeEnd.x and nodeStart.y == nodeEnd.y:
-            coord = [nodeStart.x, nodeEnd.x]
-            if nodeStart.x > nodeEnd.x:
-                coord = [nodeEnd.x, nodeStart.x]
-            x = np.arange(coord[0], coord[1], (coord[1] - coord[0])/100)
-            y = nodeStart.y*np.ones(x.size)
-            for i in range(x.size):
-                if self.binaryImage[int(y[i]), int(x[i])] == 0:
-                    return True
-        elif nodeStart.x == nodeEnd.x and nodeStart.y == nodeEnd.y:
-            if self.binaryImage[int(nodeStart.y), int(nodeStart.x)] == 0:
-                return True
+            if phaseTwo:
+                nearest = self.findNearestPoint(self.goal)
+                newPoints = self.connectPoints(self.goal, nearest)
+                self.addToGraph(newPoints, self.goal)
+                newPoints.pop(0)
+                self.points.extend(newPoints)
+            
+            if self.goal in self.points:
+                self.path = self.searchPath(self.graph, self.start, [self.start])
+                for i in range(len(self.path)):
+                    self.path[i][0] = int(round(self.path[i][0],0))
+                    self.path[i][1] = int(round(self.path[i][1],0))
+            else:
+                self.path = None
+    def searchPath(self, graph, point, path):
+        for i in graph:
+            if point == i[0]:
+                p = i
+
+        if p[0] == graph[-1][0]:
+            return path
+
+        for link in p[1]:
+            path.append(link)
+            finalPath = self.searchPath(graph, link, path)
+
+            if finalPath != None:
+                return finalPath
+            else:
+                path.pop()
+
+    def addToGraph(self, newPoints, point):
+        if len(newPoints) > 1: # If there is anything to add to the graph
+            for p in range(len(newPoints) - 1):
+                nearest = [ nearest for nearest in self.graph if (nearest[0] == [ newPoints[p][0], newPoints[p][1] ]) ]
+                nearest[0][1].append(newPoints[p + 1])
+                self.graph.append((newPoints[p + 1], []))
+
+    def connectPoints(self, a, b):
+        newPoints = []
+        newPoints.append([b[0], b[1]])
+        step = [ (a[0] - b[0]) / float(self.step_distance), (a[1] - b[1]) / float(self.step_distance) ]
+
+        # Set small steps to check for walls
+        pointsNeeded = int(math.floor(max(math.fabs(step[0]), math.fabs(step[1]))))
+        if math.fabs(step[0]) > math.fabs(step[1]):
+            if step[0] >= 0:
+                step = [ 1, step[1] / math.fabs(step[0]) ]
+            else:
+                step = [ -1, step[1] / math.fabs(step[0]) ]
+
         else:
-            if nodeStart.x < nodeEnd.x:
-                x = np.arange(nodeStart.x, nodeEnd.x, (nodeEnd.x - nodeStart.x)/100)
-            else: x = np.arange(nodeEnd.x, nodeStart.x, (nodeStart.x - nodeEnd.x)/100)
-            y = ((nodeEnd.y-nodeStart.y)/(nodeEnd.x-nodeStart.x ))*(x - nodeStart.x)+ nodeStart.y
-            for i in range(x.size):
-                if y[i] < self.height and x[i] < self.width:
-                    if self.binaryImage[int(y[i]), int(x[i])] == 0:
-                        return True
-            return False
+            if step[1] >= 0:
+                step = [ step[0] / math.fabs(step[1]), 1 ]
+            else:
+                step = [ step[0] / math.fabs(step[1]), -1 ]
+
+        blocked = False
+        for i in range(pointsNeeded+1): # Creates points between graph and solitary point
+            for j in range(self.step_distance): # Check if there are walls between points
+                coordX = round(newPoints[i][0] + step[0] * j)
+                coordY = round(newPoints[i][1] + step[1] * j)
+
+                if coordX == a[0] and coordY == a[1]:
+                    break
+                if coordY >= self.height or coordX >= self.width:
+                    break
+                if self.binaryImage[int(coordY), int(coordX)] == 0:
+                    blocked = True
+                if blocked:
+                    break
+
+            if blocked:
+                break
+            if not (coordX == a[0] and coordY == a[1]):
+                newPoints.append([ newPoints[i][0]+(step[0]*self.step_distance), newPoints[i][1]+(step[1]*self.step_distance) ])
+
+        if not blocked:
+            newPoints.append([ a[0], a[1] ])
+        return newPoints
+    
+    def findNearestPoint(self, point):
+        best = (sys.maxsize, sys.maxsize, sys.maxsize)
+        for p in self.points:
+            if p == point:
+                continue
+            dist = math.sqrt((p[0] - point[0]) ** 2 + (p[1] - point[1]) ** 2)
+            if dist < best[2]:
+                best = (p[0], p[1], dist)
+        return (best[0], best[1])
 
 def main():
-    x_start = [100, 50] 
-    x_goal = [400, 300]
+    mapPath = "/home/leanhchien/catkin_ws/src/ros_autonomous_slam/media/map.png"
+    mapPath1 = "/home/leanhchien/Navigation_algorithm/RRT_star_algorithm/RRT_map/world1.png"
+    print ('Loading map... with file \'', mapPath,'\'')
+    image = cv2.imread(mapPath)
+    image = np.array(image)
 
-    step_len = 10
-    goal_sample_rate = 0.05
-    numOfNodes = 10000
-    imagePath = "/home/leanhchien/Navigation_algorithm/RRT_star_algorithm/RRT_map/world1.png"
-    image = cv2.imread(imagePath)                        
-    rrt = RRT(image, x_start, x_goal, step_len, goal_sample_rate, numOfNodes)
-    rrt.planning()
-    print(rrt.path)
-    cv2.circle(image, tuple(x_start), 5, (255, 0, 0), thickness= 2, lineType= 8)
-    cv2.circle(image, tuple(x_goal), 5, (0, 255, 0), thickness= 2, lineType= 8)
-    for i in range(1,  len(rrt.vertices)):
-        cv2.line(image, (int(rrt.vertices[i].x),int(rrt.vertices[i].y)), (int(rrt.vertices[i].parent.x),int(rrt.vertices[i].parent.y)), (0, 128, 128), thickness = 1, lineType = 8)
-    for i in range(len(rrt.path)-1):
-       cv2.line(image, tuple(rrt.path[i]),tuple(rrt.path[i+1]), (0, 0, 255), thickness= 2, lineType=8)
-    cv2.imshow("Image", image)
-    cv2.waitKey()
-if __name__ == '__main__':
-    main()     
+    print ('Map is', len(image[0]), 'x', len(image))
+    start, goal = ([65.0, 248.0], [326.0, 279.0])
+    print(start,goal)
+    rrt = RRT_2D(image, start, goal)
+    rrt.RRT()
+    for i in range(len(rrt.graph)):
+        cv2.circle(image, (int(rrt.graph[i][0][0]), int(rrt.graph[i][0][1])), 1, (0, 128, 128), thickness = 2, lineType = 8)
+    if rrt.path != None:
+        cv2.circle(image, (int(start[0]), int(start[1])), 2, (255, 0, 0), thickness = 2, lineType = 8)
+        cv2.circle(image, (int(goal[0]), int(goal[1])), 2, (0, 255, 0), thickness = 2, lineType = 8)
+        for i in range(len(rrt.path)-1):
+            cv2.line(image, tuple(rrt.path[i]), tuple(rrt.path[i+1]), (0, 0, 255),thickness = 2, lineType = 8 )
+        cv2.imshow("Result Image", image)
+        cv2.waitKey()
+# if __name__ == '__main__':
+#     main()

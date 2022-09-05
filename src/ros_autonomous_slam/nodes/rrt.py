@@ -4,11 +4,10 @@ https://github.com/ArianJM/rapidly-exploring-random-trees
 '''
 
 import numpy as np
-from matplotlib import cm
 import cv2
 import random, sys, math, os.path
 
-MAP_IMG = '/home/leanhchien/catkin_ws/src/ros_autonomous_slam/media/my_map.png' # Black and white image for a map
+MAP_IMG = '/home/leanhchien/catkin_ws/src/ros_autonomous_slam/media/map.png' # Black and white image for a map
 MIN_NUM_VERT = 20 # Minimum number of vertex in the graph
 MAX_NUM_VERT = 1500 # Maximum number of vertex in the graph
 STEP_DISTANCE = 20 # Maximum distance between two vertex
@@ -21,7 +20,7 @@ def rapidlyExploringRandomTree(img, start, goal, seed=None):
   graph = []
   points.append(start)
   graph.append((start, []))
-  # print 'Generating and conecting random points'
+  # print 'Generating and connecting random points'
   occupied = True
   phaseTwo = False
 
@@ -156,7 +155,7 @@ def connectPoints(a, b, img):
   return newPoints
 
 def findNearestPoint(points, point):
-  best = (sys.maxint, sys.maxint, sys.maxint)
+  best = (sys.maxsize, sys.maxsize, sys.maxsize)
   for p in points:
     if p == point:
       continue
@@ -177,7 +176,7 @@ def main():
   start, goal = ([65.0, 248.0], [326.0, 279.0])
   print(start,goal)
   path,graph = rapidlyExploringRandomTree(img, start, goal, seed=SEED)
-
+  print(path)
 if len(sys.argv) > 2:
   print ('Only one argument is needed')
 elif len(sys.argv) > 1:
@@ -186,5 +185,5 @@ elif len(sys.argv) > 1:
   else:
     print (sys.argv[1], 'is not a file')
 
-
-# main()
+if __name__ == "__main__":
+  main()
